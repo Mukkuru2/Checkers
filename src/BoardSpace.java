@@ -26,13 +26,13 @@ public class BoardSpace {
         String _name = "";
         switch (type){
             case EMPTY:
-                _name = "■ ";
+                _name = " ";
                 break;
             case BLACK:
-                _name = "● ";
+                _name = "B";
                 break;
             case WHITE:
-                _name = "◌ ";
+                _name = "W";
                 break;
 
         }

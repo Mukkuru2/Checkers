@@ -1,24 +1,82 @@
+import javax.swing.*;
 import java.awt.*;
+import java.awt.event.*;
+import java.util.Vector;
 
 public class Board{
 
     private final int BOARD_WIDTH = 8, BOARD_HEIGHT = 8, //Final variables for the size of the board
             BLACK_ROWS = 3, WHITE_ROWS = 3;
 
+    public static int lastKeyPressed;
+    public static int currentSelectionX = 0;
+    public static int currentSelectionY = 0;
 
     public BoardSpace[][] board;
+    private JFrame frame;
+    private JPanel canvas;
 
     public Board() {
         board = createBoard();
 
         //Setup canvas
-        Frame frame = new Frame("The Chessboard");
-        Canvas canvas = new DrawChessBoard();
+        frame = new JFrame("The Chessboard");
+        canvas = new DrawChessBoard();
         frame.add(canvas);
+        frame.getContentPane().setPreferredSize(new Dimension(400, 400));
         frame.pack();
         frame.setVisible(true);
+
+        //Add method to close the window
+        frame.addWindowListener(new WindowAdapter(){
+            public void windowClosing(WindowEvent e){
+                System.exit(0);
+            }
+        });
+
+        //Add method to read when key is pressed, stores it into Board class.
+        frame.addKeyListener(new KeyAdapter(){
+            @Override
+            public void keyPressed(KeyEvent e){
+                Board.lastKeyPressed = e.getKeyCode();
+            }
+        });
     }
-    
+
+    public void selection(){
+        //Wait 10 ms when there is no input
+        if (lastKeyPressed == 0){
+            try {
+                Thread.sleep(10);
+                return;
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
+        switch (lastKeyPressed){
+            case 37: //Left
+            case 65: //A
+                currentSelectionX -= currentSelectionX > 0 ? 1 : 0;
+                break;
+            case 39: //Right
+            case 68: //D
+                currentSelectionX += currentSelectionX < 7 ? 1 : 0;;
+                break;
+            case 38: //Up
+            case 87: //W
+                currentSelectionY -= currentSelectionY > 0 ? 2 : 0;;
+                break;
+            case 40: //Down
+            case 83: //S
+                currentSelectionY += currentSelectionY < 6 ? 2 : 0;;
+                break;
+        }
+
+        //Reset input and repaint
+        lastKeyPressed = 0;
+        canvas.repaint();
+    }
 
     //Function that creates a start position board
     private BoardSpace[][] createBoard() {

@@ -1,10 +1,12 @@
+import javax.swing.*;
 import java.awt.*;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 
-public class DrawChessBoard extends Canvas {
+public class DrawChessBoard extends JPanel {
 
     public DrawChessBoard() {
         setBackground(Color.CYAN);
-        setSize(400, 400);
     }
 
     public void paint(Graphics g) {
@@ -43,8 +45,27 @@ public class DrawChessBoard extends Canvas {
                         break;
 
                 }
+
             }
         }
-    }
 
+        //Draw the selected piece
+
+        int posY = getWidth() * Board.currentSelectionY / (board.length) + 15;
+        int posX = getHeight() * Board.currentSelectionX / (board[0].length) + 15;
+
+        if (!(board[Board.currentSelectionY][Board.currentSelectionX].type == BoardSpace.BoardType.EMPTY)){
+            g.setColor(Color.CYAN);
+            g.fillOval(posX, posY, 20, 20);
+        } else if (!(board[Board.currentSelectionY + 1][Board.currentSelectionX].type == BoardSpace.BoardType.EMPTY)){
+            g.setColor(Color.CYAN);
+            g.fillOval(posX, posY + 50, 20, 20);
+        }
+        else {
+            Boolean evenOrOdd = Board.currentSelectionY % 2 == 0 ? Board.currentSelectionX % 2 == 0 : Board.currentSelectionX % 2 == 1;
+            g.setColor(Color.ORANGE);
+            posY += evenOrOdd ? 0 : 50;
+            g.fillRect(posX, posY, 20, 20);
+        }
+    }
 }
