@@ -4,6 +4,8 @@ public class BoardSpace {
     public enum BoardType{
         WHITE,
         BLACK,
+        WHITE_KING,
+        BLACK_KING,
         EMPTY
     }
 
@@ -17,5 +19,24 @@ public class BoardSpace {
 
     public BoardSpace(BoardType type){
         this.type = type;
+    }
+
+    @Override
+    public String toString() {
+        String _name = "";
+        switch (type){
+            case EMPTY:
+                _name = "■ ";
+                break;
+            case BLACK:
+                _name = "● ";
+                break;
+            case WHITE:
+                _name = "◌ ";
+                break;
+
+        }
+
+        return _name;
     }
 }
