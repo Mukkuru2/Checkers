@@ -1,18 +1,18 @@
 public class App {
 
     public static Board board;
-private boolean finished = false;
+    private boolean finished = false;
 
-    public void Start(){
+    public void Start() {
         board = new Board();
 
-        while(!finished){
+        while (!finished) {
             board.selection();
         }
 
     }
 
-    public static Board GetBoard(){
+    public static Board GetBoard() {
         return board;
     }
 }

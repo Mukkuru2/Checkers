@@ -1,43 +1,75 @@
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
 
 public class DrawChessBoard extends JPanel {
 
     public DrawChessBoard() {
-        setBackground(Color.CYAN);
+        setBackground(Color.WHITE);
     }
 
-    public void paint(Graphics g) {
-        super.paint(g);
+    public void paintComponent(Graphics g) {
+        super.paintComponent(g);
         BoardSpace[][] board = App.GetBoard().board;
 
+        //Paintbrush object to be able to call functions within this function without having to pass g, the board, the width and the height every time.
+        Paintbrush brush = new Paintbrush(g, board, getWidth(), getHeight());
+
+        brush.drawBoard();
+        brush.drawPieces();
+        brush.drawSelection();
+        brush.drawMovementOptions();
+
+    }
+}
+
+class Paintbrush {
+    private Graphics g;
+    private BoardSpace[][] board;
+    private int width, height;
+
+    Paintbrush(Graphics g, BoardSpace[][] board, int width, int height) {
+        this.g = g;
+        this.board = board;
+        this.width = width;
+        this.height = height;
+    }
+
+    void drawBoard() {
         for (int i = 0; i < board.length; i++) {
-            for (int j = 0; j < board[0].length; j++) {
+            for (int j = 0; j < board.length; j++) {
                 Boolean evenOrOdd = i % 2 == 0 ? j % 2 == 0 : j % 2 == 1;
                 Color _c = evenOrOdd ? Color.BLACK : Color.WHITE;
 
-                int posY = getWidth() * i / (board.length);
-                int posX = getHeight() * j / (board[0].length);
+                int posY = width * i / (board.length);
+                int posX = height * j / (board.length);
 
                 g.setColor(_c);
-                g.fillRect(posX, posY, getWidth() / (board.length), getHeight() / (board[0].length));
+                g.fillRect(posX, posY, width / (board.length), height / (board.length));
+            }
+        }
+    }
 
-                //Edit position so the oval appears in the center
-                posX += 15;
-                posY += 15;
+    void drawPieces() {
 
+        int pieceDiameter = 20;
+        for (int i = 0; i < board.length; i++) {
+            for (int j = 0; j < board.length; j++) {
+
+                int posY = width * i / (board.length) + (width / board.length / 2 - pieceDiameter / 2);
+                int posX = height * j / (board.length) + (width / board.length / 2 - pieceDiameter / 2);
+
+
+                //Detemine what happens based on board space and it's type
                 switch (board[i][j].type) {
                     case EMPTY:
                         break;
                     case WHITE:
                         g.setColor(Color.WHITE);
-                        g.fillOval(posX, posY, 20, 20);
+                        g.fillOval(posX, posY, pieceDiameter, pieceDiameter);
                         break;
                     case BLACK:
                         g.setColor(new Color(120, 0, 0));
-                        g.fillOval(posX, posY, 20, 20);
+                        g.fillOval(posX, posY, pieceDiameter, pieceDiameter);
                         break;
                     case WHITE_KING:
                         break;
@@ -45,27 +77,49 @@ public class DrawChessBoard extends JPanel {
                         break;
 
                 }
-
             }
         }
 
-        //Draw the selected piece
 
-        int posY = getWidth() * Board.currentSelectionY / (board.length) + 15;
-        int posX = getHeight() * Board.currentSelectionX / (board[0].length) + 15;
-
-        if (!(board[Board.currentSelectionY][Board.currentSelectionX].type == BoardSpace.BoardType.EMPTY)){
-            g.setColor(Color.CYAN);
-            g.fillOval(posX, posY, 20, 20);
-        } else if (!(board[Board.currentSelectionY + 1][Board.currentSelectionX].type == BoardSpace.BoardType.EMPTY)){
-            g.setColor(Color.CYAN);
-            g.fillOval(posX, posY + 50, 20, 20);
-        }
-        else {
-            Boolean evenOrOdd = Board.currentSelectionY % 2 == 0 ? Board.currentSelectionX % 2 == 0 : Board.currentSelectionX % 2 == 1;
-            g.setColor(Color.ORANGE);
-            posY += evenOrOdd ? 0 : 50;
-            g.fillRect(posX, posY, 20, 20);
-        }
     }
+
+    void drawSelection() {
+
+        int pieceDiameter = 20;
+        //Draw the selected piece
+        int posY = width * Board.currentSelectionY / (board.length) + (width / board.length / 2 - pieceDiameter / 2);
+        int posX = height * Board.currentSelectionX / (board.length) + (width / board.length / 2 - pieceDiameter / 2);
+
+        if (!(board[Board.currentSelectionY][Board.currentSelectionX].type == BoardSpace.BoardType.EMPTY)) {
+            Color _c = (board[Board.currentSelectionY][Board.currentSelectionX].type == BoardSpace.BoardType.WHITE) ? Color.CYAN : Color.GREEN;
+            g.setColor(_c);
+            g.fillOval(posX, posY, pieceDiameter, pieceDiameter);
+        } else {
+            g.setColor(Color.ORANGE);
+            g.fillRect(posX, posY, pieceDiameter, pieceDiameter);
+        }
+
+    }
+
+    void drawMovementOptions() {
+        int pieceDiameter = 10;
+
+        if (Board.currentMoveSelectionY == -1 || Board.currentMoveSelectionX == -1)
+            return;
+        int posY = width * Board.currentMoveSelectionY / (board.length) + (width / board.length / 2 - pieceDiameter / 2);
+        int posX = height * Board.currentMoveSelectionX / (board.length) + (width / board.length / 2 - pieceDiameter / 2);
+
+        BoardSpace.BoardType currentSpace = board[Board.currentMoveSelectionY][Board.currentMoveSelectionX].type;
+
+        if (currentSpace == BoardSpace.BoardType.EMPTY) {
+            g.setColor(Color.ORANGE);
+            g.fillRect(posX, posY, pieceDiameter, pieceDiameter);
+
+        } else {
+            g.setColor(Color.RED);
+            g.fillOval(posX, posY, pieceDiameter, pieceDiameter);
+        }
+
+    }
+
 }
