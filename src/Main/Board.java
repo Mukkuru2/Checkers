@@ -1,6 +1,11 @@
+package BoardStates;
+
+import Rendering.DrawChessBoard;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.util.ArrayList;
 
 public class Board {
 
@@ -21,10 +26,13 @@ public class Board {
     public static int hitSelectionX = -1;
     public static int hitSelectionY = -1;
 
-    public static boolean turn = true;
+    public static boolean turn = true; //true is black's turn, false is white's turn
     public static boolean selecting = true;
     public static boolean hittingPiece = false;
-    public static boolean canHitEnemy = false;
+
+    //List of pieces that MUST be moves if possible.
+    private ArrayList<BoardSpace> piecesThatCanHit;
+    private int currentPieceIndex = 0;
 
     public BoardSpace[][] board;
     private JFrame frame;
@@ -52,7 +60,7 @@ public class Board {
             }
         });
 
-        //Add method to read when key is pressed, stores it into Board class.
+        //Add method to read when key is pressed, stores it into BoardStates.Board class.
         frame.addKeyListener(new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent e) {
@@ -63,6 +71,9 @@ public class Board {
 
     public void selection() {
         //Wait 10 ms when there is no input
+
+        //This version of JDK also wanted me to add a try/catch block to the sleep statement, so this is just
+        //auto generated.
         if (lastKeyPressed == 0) {
             try {
                 Thread.sleep(10);
@@ -72,10 +83,30 @@ public class Board {
             }
         }
 
+
+        //Force player to choose from pieces that can hit if that is the case
+
+        piecesThatCanHit = canHitPieces();
+
+        for (int i = 0; i < piecesThatCanHit.size(); i++) {
+            BoardSpace.BoardType currentTurnType = turn ? BoardSpace.BoardType.BLACK : BoardSpace.BoardType.WHITE;
+
+            //Remove entry from arraylist if they are not the current turn
+            if (piecesThatCanHit.get(i).type != currentTurnType) {
+                piecesThatCanHit.remove(i);
+            }
+        }
+        if (piecesThatCanHit.size() != 0) {
+            selectMustHitPiece();
+        }
+
+
         //Slightly messy input handling, since there is no real game loop. If that were the case you could look at which key changed each tick,
         //and base input handling off of that (i.e. loop through all keys and see if they have been pressed, and act accordingly).
 
         //This is the input handling during the selection phase of the game, where the player selects which piece to do something with.
+
+        //TODO: Rework into state design pattern. I didn't expect there to be this many states at first glance.
         if (selecting) {
             switch (lastKeyPressed) {
                 case 37: //Left
@@ -136,8 +167,7 @@ public class Board {
     }
 
     private void selectPieceMovement() {
-        //
-        System.out.println(selecting);
+
         switch (lastKeyPressed) {
             case 37: //Left
             case 65: //A
@@ -174,13 +204,45 @@ public class Board {
 
     }
 
-    private void moveSelection(int dir) { //1 is right, -1 is left. Moves the direction of the direction you want to move towards.
+    public void selectMustHitPiece() {
+        switch (lastKeyPressed) {
+            case 37: //Left
+            case 65: //A
 
-        if (currentSelectionX <= 0 && dir == -1 || currentSelectionX >= 7 && dir == 1)
-            return;
+                break;
+            case 39: //Right
+            case 68: //D
+
+                break;
+            case 13: //Enter/return
+            case 32: //Spacebar
+                if (board[currentMoveSelectionY][currentMoveSelectionX].type == BoardSpace.BoardType.EMPTY) {
+                    board[currentMoveSelectionY][currentMoveSelectionX].type = board[currentSelectionY][currentSelectionX].type;
+
+                    board[currentSelectionY][currentSelectionX].type = BoardSpace.BoardType.EMPTY;
+
+                    currentMoveSelectionX = -1;
+                    currentMoveSelectionY = -1;
+
+                    if (hittingPiece) {
+                        board[hitSelectionY][hitSelectionX].type = BoardSpace.BoardType.EMPTY;
+                    }
+
+                    selecting = true;
+                    turn = !turn; //Set turn to it's opposite value, to get the other turn.
+                }
+                break;
+        }
+
+    }
+
+    private void moveSelection(int dir) { //1 is right, -1 is left. Moves the direction of the direction you want to move towards.
 
         //Place selection visual either at the right of the currently selected piece, or the left, depending on if the right is out of screen.
         currentMoveSelectionX = currentSelectionX + dir;
+
+        if (currentMoveSelectionX < 0 || currentMoveSelectionX > 7)
+            currentMoveSelectionX = currentSelectionX - dir;
 
         //Place the y coordinate up or below
         if (board[currentSelectionY][currentSelectionX].type == BoardSpace.BoardType.BLACK) {
@@ -189,23 +251,63 @@ public class Board {
             currentMoveSelectionY = currentSelectionY + 1;
         }
 
-        hittingPiece = checkIfCanHit();
+        //Check if the currently selected move will hit a piece
+        if (checkIfSelectionCanHit(board[currentSelectionY][currentSelectionX], board[currentMoveSelectionY][currentMoveSelectionX])) {
+            hittingPiece = true;
+
+            currentMoveSelectionY += currentMoveSelectionY - currentSelectionY;
+            currentMoveSelectionX += currentMoveSelectionX - currentSelectionX;
+        } else {
+            hittingPiece = false;
+        }
     }
 
-    private boolean checkIfCanHit() {
 
-        int _dY = currentMoveSelectionY - currentSelectionY;
-        int _dX = currentMoveSelectionX - currentSelectionX;
+    private ArrayList<BoardSpace> canHitPieces() {
 
-        if (board[currentSelectionY][currentSelectionX].type != board[currentMoveSelectionY][currentMoveSelectionX].type
-                && board[currentMoveSelectionY][currentMoveSelectionX].type != BoardSpace.BoardType.EMPTY
-                && board[currentMoveSelectionY + _dY][currentMoveSelectionX + _dX].type == BoardSpace.BoardType.EMPTY) {
+        ArrayList<BoardSpace> piecesThatCanHit = new ArrayList(0);
 
-            hitSelectionX = currentMoveSelectionX;
-            hitSelectionY = currentMoveSelectionY;
+        for (int i = 0; i < board.length; i++) {
+            for (int j = 0; j < board[i].length; j++) {
 
-            currentMoveSelectionY += _dY;
-            currentMoveSelectionX += _dX;
+                if (board[i][j].type == BoardSpace.BoardType.EMPTY) {
+                    continue;
+                }
+
+                int targetY, targetX1, targetX2;
+                //Place the y coordinate up or below
+                if (board[i][j].type == BoardSpace.BoardType.BLACK) {
+                    targetY = board[i][j].gridY - 1;
+                } else {
+                    targetY = board[i][j].gridY + 1;
+                }
+
+                targetX1 = j <= 1 ? j + 1 : j - 1;
+                targetX2 = j >= 6 ? j - 1 : j + 1;
+
+                //Check the two spaces where a piece can move for possible hits
+                if (checkIfSelectionCanHit(board[i][j], board[targetY][targetX1]) || checkIfSelectionCanHit(board[i][j], board[targetY][targetX2])) {
+                    piecesThatCanHit.add(board[i][j]);
+                }
+            }
+        }
+
+        return piecesThatCanHit;
+    }
+
+
+    private boolean checkIfSelectionCanHit(BoardSpace unit, BoardSpace target) {
+
+        int _dY = target.gridY - unit.gridY;
+        int _dX = target.gridX - unit.gridX;
+
+        if (board[unit.gridY][unit.gridX].type != board[target.gridY][target.gridX].type
+                && board[target.gridY][target.gridX].type != BoardSpace.BoardType.EMPTY
+                && board[target.gridY + _dY][target.gridX + _dX].type == BoardSpace.BoardType.EMPTY) {
+
+            hitSelectionX = target.gridX;
+            hitSelectionY = target.gridY;
+
             return true;
         }
         return false;
@@ -236,7 +338,7 @@ public class Board {
                 //or place a piece when needed
                 else {
                     BoardSpace.BoardType cellSpace = whiteSpace ? BoardSpace.BoardType.WHITE : BoardSpace.BoardType.BLACK;
-                    _board[i][j] = new BoardSpace(cellSpace, j, i);
+                    _board[i][j] = new BoardSpace(j, i, cellSpace);
                 }
             }
         }

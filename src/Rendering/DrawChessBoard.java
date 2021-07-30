@@ -1,3 +1,7 @@
+import BoardStates.Board;
+import BoardStates.BoardSpace;
+import Main.App;
+
 import javax.swing.*;
 import java.awt.*;
 
@@ -55,7 +59,7 @@ class Paintbrush {
 
     void drawBoard() {
         for (int i = 0; i < board.length; i++) {
-            for (int j = 0; j < board.length; j++) {
+            for (int j = 0; j < board[i].length; j++) {
                 Boolean evenOrOdd = i % 2 == 0 ? j % 2 == 0 : j % 2 == 1;
                 Color _c = evenOrOdd ? Color.BLACK : Color.WHITE;
 
@@ -72,7 +76,7 @@ class Paintbrush {
 
         int pieceDiameter = 20;
         for (int i = 0; i < board.length; i++) {
-            for (int j = 0; j < board.length; j++) {
+            for (int j = 0; j < board[i].length; j++) {
 
                 int posY = width * i / (board.length) + (width / board.length / 2 - pieceDiameter / 2);
                 int posX = height * j / (board.length) + (width / board.length / 2 - pieceDiameter / 2);
@@ -90,11 +94,6 @@ class Paintbrush {
                         g.setColor(new Color(120, 0, 0));
                         g.fillOval(posX, posY, pieceDiameter, pieceDiameter);
                         break;
-                    case WHITE_KING:
-                        break;
-                    case BLACK_KING:
-                        break;
-
                 }
             }
         }
@@ -103,11 +102,6 @@ class Paintbrush {
     }
 
     void drawSelection() {
-
-        /*if (canHitPieces()){
-            //do something
-        }*/
-
         int pieceDiameter = 20;
         //Draw the selected piece
         int posY = width * Board.currentSelectionY / (board.length) + (width / board.length / 2 - pieceDiameter / 2);

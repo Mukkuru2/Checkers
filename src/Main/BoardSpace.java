@@ -1,11 +1,12 @@
+package BoardStates;
+
 public class BoardSpace {
 
-    //possible boardstates
+    //possible boardstates. Could make it a parent class and inherit, but there don't seem to be that many traits that would
+    //make that worth it. Might be worth looking at if kings (dubbele Dam) get added.
     public enum BoardType {
         WHITE,
         BLACK,
-        WHITE_KING,
-        BLACK_KING,
         EMPTY
     }
 
@@ -15,10 +16,10 @@ public class BoardSpace {
 
     //Default state of board: empty
     public BoardSpace(int x, int y) {
-        this(BoardType.EMPTY, x, y);
+        this( x, y, BoardType.EMPTY);
     }
 
-    public BoardSpace(BoardType type, int x, int y) {
+    public BoardSpace(int x, int y, BoardType type) {
         this.type = type;
         gridX = x;
         gridY = y;
