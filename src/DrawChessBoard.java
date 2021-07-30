@@ -9,7 +9,26 @@ public class DrawChessBoard extends JPanel {
 
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
-        BoardSpace[][] board = App.GetBoard().board;
+
+        BoardSpace[][] board;
+        //This function seems to somehow run before the board exists, *occasionally*... which produces an error which doesn't seem to
+        //stop it from working. Since the error is annoying, there is a try/catch block here, trying to fix it.
+
+        try {
+            board = App.GetBoard().board;
+        } catch(Exception e) {
+
+            //Sleep for 10 ms
+            try {
+                Thread.sleep(10);
+            } catch (InterruptedException interruptedException) {
+                interruptedException.printStackTrace();
+            }
+
+            //Try again
+            board = App.GetBoard().board;
+
+        }
 
         //Paintbrush object to be able to call functions within this function without having to pass g, the board, the width and the height every time.
         Paintbrush brush = new Paintbrush(g, board, getWidth(), getHeight());
@@ -84,6 +103,10 @@ class Paintbrush {
     }
 
     void drawSelection() {
+
+        /*if (canHitPieces()){
+            //do something
+        }*/
 
         int pieceDiameter = 20;
         //Draw the selected piece

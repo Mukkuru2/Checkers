@@ -17,7 +17,14 @@ public class Board {
     public static int currentMoveSelectionX = -1;
     public static int currentMoveSelectionY = -1;
 
+    //Vector for which piece should be removed
+    public static int hitSelectionX = -1;
+    public static int hitSelectionY = -1;
+
+    public static boolean turn = true;
     public static boolean selecting = true;
+    public static boolean hittingPiece = false;
+    public static boolean canHitEnemy = false;
 
     public BoardSpace[][] board;
     private JFrame frame;
@@ -26,6 +33,10 @@ public class Board {
     public Board() {
         board = createBoard();
 
+        setupFrame();
+    }
+
+    private void setupFrame() {
         //Setup canvas
         frame = new JFrame("The Chessboard");
         canvas = new DrawChessBoard();
@@ -87,26 +98,28 @@ public class Board {
                     break;
                 case 38: //Up
                 case 87: //W
+                    //Move current selection down if inside field
                     currentSelectionY -= currentSelectionY > 1 ? 2 : 0;
                     break;
                 case 40: //Down
                 case 83: //S
+                    //Move current selection up if inside field
                     currentSelectionY += currentSelectionY < 6 ? 2 : 0;
                     break;
                 case 13: //Enter/return
                 case 32: //Spacebar
+
+                    //Select piece if there is not an empty space there
                     if (board[currentSelectionY][currentSelectionX].type == BoardSpace.BoardType.EMPTY)
                         break;
 
-                    selecting = false;
+                    //Check for turn
+                    if ((turn && board[currentSelectionY][currentSelectionX].type == BoardSpace.BoardType.BLACK)
+                            || (!turn && board[currentSelectionY][currentSelectionX].type == BoardSpace.BoardType.WHITE))
+                        break;
 
-                    //Give a default selection visual
-                    currentMoveSelectionX = currentSelectionX > 0 ? currentSelectionX - 1 : currentSelectionX + 1;
-                    if (board[currentSelectionY][currentSelectionX].type == BoardSpace.BoardType.BLACK) {
-                        currentMoveSelectionY = currentSelectionY - 1;
-                    } else {
-                        currentMoveSelectionY = currentSelectionY + 1;
-                    }
+                    selecting = false;
+                    moveSelection(1);
 
                     //reset input to prevent spacebar action from triggering twice
                     lastKeyPressed = 0;
@@ -124,34 +137,15 @@ public class Board {
 
     private void selectPieceMovement() {
         //
+        System.out.println(selecting);
         switch (lastKeyPressed) {
             case 37: //Left
             case 65: //A
-
-                //Place selection visual either at the left of the currently selected piece, or the right, depending on if the left is out of screen.
-                currentMoveSelectionX = currentSelectionX > 0 ? currentSelectionX - 1 : currentSelectionX + 1;
-
-                //Place the selection right in front of the player
-                if (board[currentSelectionY][currentSelectionX].type == BoardSpace.BoardType.BLACK) {
-                    currentMoveSelectionY = currentSelectionY - 1;
-                } else {
-                    currentMoveSelectionY = currentSelectionY + 1;
-                }
-
-                //if (checkIfCanHit()){
-                //}
+                moveSelection(-1);
                 break;
             case 39: //Right
             case 68: //D
-
-                //Place selection visual either at the right of the currently selected piece, or the left, depending on if the right is out of screen.
-                currentMoveSelectionX = currentSelectionX < 7 ? currentSelectionX + 1 : currentSelectionX - 1;
-
-                if (board[currentSelectionY][currentSelectionX].type == BoardSpace.BoardType.BLACK) {
-                    currentMoveSelectionY = currentSelectionY - 1;
-                } else {
-                    currentMoveSelectionY = currentSelectionY + 1;
-                }
+                moveSelection(1);
                 break;
             case 13: //Enter/return
             case 32: //Spacebar
@@ -163,26 +157,57 @@ public class Board {
                     currentMoveSelectionX = -1;
                     currentMoveSelectionY = -1;
 
+                    if (hittingPiece) {
+                        board[hitSelectionY][hitSelectionX].type = BoardSpace.BoardType.EMPTY;
+                    }
+
                     selecting = true;
+                    turn = !turn; //Set turn to it's opposite value, to get the other turn.
                 }
                 break;
             case 67: //C: cancel
                 currentMoveSelectionX = -1;
                 currentMoveSelectionY = -1;
                 selecting = true;
-
+                break;
         }
 
     }
 
+    private void moveSelection(int dir) { //1 is right, -1 is left. Moves the direction of the direction you want to move towards.
+
+        if (currentSelectionX <= 0 && dir == -1 || currentSelectionX >= 7 && dir == 1)
+            return;
+
+        //Place selection visual either at the right of the currently selected piece, or the left, depending on if the right is out of screen.
+        currentMoveSelectionX = currentSelectionX + dir;
+
+        //Place the y coordinate up or below
+        if (board[currentSelectionY][currentSelectionX].type == BoardSpace.BoardType.BLACK) {
+            currentMoveSelectionY = currentSelectionY - 1;
+        } else {
+            currentMoveSelectionY = currentSelectionY + 1;
+        }
+
+        hittingPiece = checkIfCanHit();
+    }
+
     private boolean checkIfCanHit() {
 
-        int _dY = currentSelectionY - currentMoveSelectionY;
-        int _dX = currentSelectionX - currentMoveSelectionX;
+        int _dY = currentMoveSelectionY - currentSelectionY;
+        int _dX = currentMoveSelectionX - currentSelectionX;
 
         if (board[currentSelectionY][currentSelectionX].type != board[currentMoveSelectionY][currentMoveSelectionX].type
-                && board[currentMoveSelectionY + _dY][currentMoveSelectionX + _dX].type == BoardSpace.BoardType.EMPTY)
+                && board[currentMoveSelectionY][currentMoveSelectionX].type != BoardSpace.BoardType.EMPTY
+                && board[currentMoveSelectionY + _dY][currentMoveSelectionX + _dX].type == BoardSpace.BoardType.EMPTY) {
+
+            hitSelectionX = currentMoveSelectionX;
+            hitSelectionY = currentMoveSelectionY;
+
+            currentMoveSelectionY += _dY;
+            currentMoveSelectionX += _dX;
             return true;
+        }
         return false;
     }
 
@@ -206,12 +231,12 @@ public class Board {
 
                 //Create empty board space if not a white or black space
                 if (!whiteSpace && !blackSpace) {
-                    _board[i][j] = new BoardSpace();
+                    _board[i][j] = new BoardSpace(j, i);
                 }
                 //or place a piece when needed
                 else {
                     BoardSpace.BoardType cellSpace = whiteSpace ? BoardSpace.BoardType.WHITE : BoardSpace.BoardType.BLACK;
-                    _board[i][j] = new BoardSpace(cellSpace);
+                    _board[i][j] = new BoardSpace(cellSpace, j, i);
                 }
             }
         }

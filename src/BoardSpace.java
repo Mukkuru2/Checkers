@@ -1,7 +1,7 @@
 public class BoardSpace {
 
     //possible boardstates
-    public enum BoardType{
+    public enum BoardType {
         WHITE,
         BLACK,
         WHITE_KING,
@@ -10,21 +10,24 @@ public class BoardSpace {
     }
 
     public BoardType type;
-
+    public int gridX;
+    public int gridY;
 
     //Default state of board: empty
-    public BoardSpace(){
-        this(BoardType.EMPTY);
+    public BoardSpace(int x, int y) {
+        this(BoardType.EMPTY, x, y);
     }
 
-    public BoardSpace(BoardType type){
+    public BoardSpace(BoardType type, int x, int y) {
         this.type = type;
+        gridX = x;
+        gridY = y;
     }
 
     @Override
     public String toString() {
         String _name = "";
-        switch (type){
+        switch (type) {
             case EMPTY:
                 _name = " ";
                 break;
